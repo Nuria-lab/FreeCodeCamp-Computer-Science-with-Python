@@ -16,45 +16,47 @@ def getTotals(categories):
 
 
 def create_spend_chart(categories):
+  output = "Percentage spent by category\n"
+
   
+  total      = 0
+  expenses   = []
+  names     = []
+  len_names = 0
+
+  for item in categories:
+    expense    = sum([-x['amount'] for x in item.ledger if x['amount'] < 0])
+    total     += expense
+
+    if len(item.name) > len_names:
+      len_names = len(item.name)
+
+    expenses.append(expense)
+    names.append(item.name)
+
+
+  expenses = [(x/total)*100 for x in expenses]
+  names   = [name.ljust(len_names, " ") for name in names]
+
   
-  res = "Percentage spent by category\n"
-  i = 100
-  totals = getTotals(categories)
-  while i >= 0:
-    cat_spaces = " "
-    for total in totals:
-      if total * 100 >= i:
-        cat_spaces += "o"
-      else:
-        cat_spaces += " "
-    res += str(i).rjust(3)+ "|"+ cat_spaces+("\n")
-    i -= 10
+  for x in range(100,-1,-10):
+    output += str(x).rjust(3, " ") + '|'
+    for y in expenses:
+      output += " o " if y >= x else "   "
+    output += " \n"
 
-  dashes = "-" + "---" * len(categories)
-  names = []
-  x_axis = " "
-  for category in categories:
-    names.append(category.name)
+  
+  output += "    " + "---"*len(names) + "-\n"
 
-  maxi = max(names, key=len)
-
-  for x in range(len(maxi)):
-    nameStr = " "
+  for i in range(len_names):
+    output += "    "
     for name in names:
-      if x >= len(name):
-        nameStr += " "
-      else:
-        nameStr += name[x] + " "
+      output += " " + name[i] + " "
+    output += " \n"
 
-    if (x != len(maxi) - 1):
-      nameStr += "\n"
-  return res
-  
-  
+  return output.strip("\n")
 
- 
-
+   
 class Category:
 
   def __init__(self, name):
@@ -62,16 +64,21 @@ class Category:
     self.ledger = list()
 
   def __str__(self):
-    title = f"{self.name:*^30}\n"
-    items = ""
+  
+    output = ""
+    output += self.name.center(30,"*") + "\n"
+
     total = 0
     for item in self.ledger:
-      items += f'{item["description"][0:23]:23}' + f'{item["amount"]:>7.2f}' + "\n"
+      total += item['amount']
 
-      total += item["amount"]
+      output += item['description'].ljust(23, " ")[:23]
+      output += "{0:>7.2f}".format(item['amount'])
+      output += "\n"
 
-      output = title + items + "Total" +" " +str(total)
-      return output
+    output += "Total: " + "{0:.2f}".format(total)
+    return output
+   
 
   def deposit(self, amount, description=""):
     self.ledger.append({"amount": amount, "description": description})
